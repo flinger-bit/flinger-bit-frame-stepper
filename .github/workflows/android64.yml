@@ -18,14 +18,10 @@ jobs:
         with:
           version: v3.7.4
 
-      - name: Build Android64
+      - name: Install SDK and Android binaries
         shell: bash
         run: |
           set -euo pipefail
-
-          if [ -n "${ANDROID_NDK_LATEST_HOME:-}" ]; then
-            export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
-          fi
 
           MOD_JSON_PATH="$(find . -name mod.json -not -path './geode-sdk-clone/*' -print | sort -r | head -n 1)"
           TARGET_GEODE_VERSION="$(jq -r '.geode' "$MOD_JSON_PATH")"
@@ -36,6 +32,18 @@ jobs:
           geode sdk install
           geode sdk update "$TARGET_GEODE_VERSION"
           geode sdk install-binaries -p android64
+
+      - name: Build Android64
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ANDROID_NDK_LATEST_HOME:-}" ]; then
+            echo "ANDROID_NDK_LATEST_HOME is not set on this runner"
+            exit 1
+          fi
+
+          export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
           geode build -p android64
 
       - name: Upload artifact
