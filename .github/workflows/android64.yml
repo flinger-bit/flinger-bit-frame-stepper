@@ -1,4 +1,4 @@
-name: Build Android64 (Geode 4.x HARD LOCK)
+name: Build Geode (Auto Platform)
 
 on:
   workflow_dispatch:
@@ -12,20 +12,20 @@ jobs:
 
     steps:
       # =========================
-      # 1. Checkout mod repo
+      # 1. Checkout
       # =========================
       - uses: actions/checkout@v4
 
       # =========================
-      # 2. Install dependencies
+      # 2. Install tools
       # =========================
-      - name: Install build tools
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build git
 
       # =========================
-      # 3. CLONE GEODE 4.x SDK (REAL LOCK)
+      # 3. Clone Geode 4.x (LOCKED)
       # =========================
       - name: Clone Geode SDK 4.2.0
         run: |
@@ -37,19 +37,28 @@ jobs:
           cd ..
 
           echo "GEODE_SDK=$GITHUB_WORKSPACE/geode-sdk" >> $GITHUB_ENV
-          echo "GEODE_TARGET_PLATFORM=android64" >> $GITHUB_ENV
 
       # =========================
-      # 4. Setup Android NDK
+      # 4. Detect platform AUTOMATICALLY
+      # =========================
+      - name: Detect platform
+        run: |
+          set -e
+
+          # Geode 4.x uses "android", NOT android64
+          echo "GEODE_TARGET_PLATFORM=android" >> $GITHUB_ENV
+
+      # =========================
+      # 5. Setup Android NDK
       # =========================
       - name: Setup NDK
         run: |
           echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
 
       # =========================
-      # 5. CONFIGURE BUILD
+      # 6. Configure CMake
       # =========================
-      - name: Configure CMake
+      - name: Configure
         run: |
           set -e
 
@@ -57,12 +66,12 @@ jobs:
           cd build
 
           cmake .. \
-            -DGEODE_TARGET_PLATFORM=android64 \
             -DGEODE_SDK=$GITHUB_WORKSPACE/geode-sdk \
+            -DGEODE_TARGET_PLATFORM=android \
             -DCMAKE_BUILD_TYPE=Release
 
       # =========================
-      # 6. BUILD
+      # 7. Build
       # =========================
       - name: Build mod
         run: |
@@ -71,11 +80,11 @@ jobs:
           cmake --build .
 
       # =========================
-      # 7. ARTIFACT
+      # 8. Upload artifact
       # =========================
-      - name: Upload build
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: geode-android64-4.2.0
+          name: geode-mod-android
           path: build/*.geode
           if-no-files-found: error
