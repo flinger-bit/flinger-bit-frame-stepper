@@ -2,7 +2,6 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 #include <algorithm>
-#include <cmath>
 
 using namespace geode::prelude;
 using cocos2d::CCDirector;
