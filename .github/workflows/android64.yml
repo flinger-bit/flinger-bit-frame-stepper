@@ -13,46 +13,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ✅ CLI correcta para Geode 4.x
+      # CLI correcta para Geode 4
       - name: Setup Geode CLI
         uses: geode-sdk/cli/.github/actions/setup@main
         with:
           version: v2.5.0
 
-      # ✅ Config básica (evita errores de sdk-path)
+      # Configurar ruta del SDK
       - name: Setup Geode config
         run: |
           set -euo pipefail
           geode config set sdk-path "$GITHUB_WORKSPACE/geode-sdk"
 
-      # ✅ Profile dummy (Geode lo exige)
+      # Crear profile (necesario)
       - name: Create profile
         run: |
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/profile/geode/mods"
           geode profile add --name CI "$GITHUB_WORKSPACE/profile/GeometryDash.exe"
 
-      # ✅ Instalar SDK correctamente (SIN usar versión directa)
+      # Instalar SDK
       - name: Install SDK
         run: |
           set -euo pipefail
 
-          echo "Installing Geode SDK..."
-
           geode sdk install "$GITHUB_WORKSPACE/geode-sdk"
           geode sdk update stable
+
+          # 🔥 FIX CRÍTICO
+          echo "GEODE_SDK=$GITHUB_WORKSPACE/geode-sdk" >> $GITHUB_ENV
+
           geode sdk install-binaries -p android64
 
-      # ✅ Build Android
+      # Build
       - name: Build Android64
         run: |
           set -euo pipefail
 
           export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
+          export GEODE_SDK="$GITHUB_WORKSPACE/geode-sdk"
 
           geode build -p android64
 
-      # ✅ Subir mod
+      # Upload
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
