@@ -13,46 +13,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ✅ CLI correcta para Geode 4.x
       - name: Setup Geode CLI
         uses: geode-sdk/cli/.github/actions/setup@main
         with:
           version: v2.5.0
 
-      - name: Setup Geode config (FIX REAL)
+      # ✅ Config básica (evita errores de sdk-path)
+      - name: Setup Geode config
         run: |
           set -euo pipefail
-
-          # Crear config básica (esto faltaba)
           geode config set sdk-path "$GITHUB_WORKSPACE/geode-sdk"
-          geode config set default-platform android64
 
-      - name: Create dummy profile (necesario sí o sí)
+      # ✅ Profile dummy (Geode lo exige)
+      - name: Create profile
         run: |
           set -euo pipefail
-
           mkdir -p "$GITHUB_WORKSPACE/profile/geode/mods"
           geode profile add --name CI "$GITHUB_WORKSPACE/profile/GeometryDash.exe"
 
+      # ✅ Instalar SDK correctamente (SIN usar versión directa)
       - name: Install SDK
         run: |
           set -euo pipefail
 
-          TARGET_GEODE_VERSION=$(jq -r '.geode' mod.json)
-
-          echo "Using Geode $TARGET_GEODE_VERSION"
+          echo "Installing Geode SDK..."
 
           geode sdk install "$GITHUB_WORKSPACE/geode-sdk"
-          geode sdk update "$TARGET_GEODE_VERSION"
+          geode sdk update stable
           geode sdk install-binaries -p android64
 
-      - name: Build
+      # ✅ Build Android
+      - name: Build Android64
         run: |
           set -euo pipefail
+
           export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
+
           geode build -p android64
 
-      - name: Upload
+      # ✅ Subir mod
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mod
+          name: FrameStepper-Android64
           path: build-android64/*.geode
+          if-no-files-found: error
