@@ -1,4 +1,4 @@
-name: Build Android64 (Geode)
+name: Build Android64 (Geode PRO)
 
 on:
   workflow_dispatch:
@@ -11,24 +11,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # =========================
       # 1. Checkout
+      # =========================
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 2. Setup Geode CLI (FIJO, NO latest random)
+      # =========================
+      # 2. Setup CLI fijo
+      # =========================
       - name: Setup Geode CLI
         uses: geode-sdk/cli/.github/actions/setup@main
         with:
           version: v2.5.0
 
-      # 3. Config SDK path (IMPORTANTE)
-      - name: Configure Geode SDK path
+      # =========================
+      # 3. SDK path (CRÍTICO)
+      # =========================
+      - name: Configure SDK
         run: |
           set -e
           geode config set sdk-path "$GITHUB_WORKSPACE/geode-sdk"
 
-      # 4. Install SDK (SIN sdk update, SIN stable)
-      - name: Install Geode SDK
+      # =========================
+      # 4. Install SDK (SIN update)
+      # =========================
+      - name: Install SDK
         run: |
           set -e
 
@@ -36,28 +44,38 @@ jobs:
 
           echo "GEODE_SDK=$GITHUB_WORKSPACE/geode-sdk" >> $GITHUB_ENV
 
-      # 5. Install Android binaries
+      # =========================
+      # 5. Install Android binaries (FIX REAL)
+      # =========================
       - name: Install Android binaries
         run: |
           set -e
-          geode sdk install-binaries -p android64
 
-      # 6. Set Android NDK
-      - name: Setup Android NDK
+          geode sdk install-binaries android64
+
+      # =========================
+      # 6. Android NDK
+      # =========================
+      - name: Setup NDK
         run: |
           echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
 
-      # 7. Build mod
+      # =========================
+      # 7. Build
+      # =========================
       - name: Build mod
         run: |
           set -e
+
           export GEODE_SDK="$GITHUB_WORKSPACE/geode-sdk"
           export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
 
           geode build -p android64
 
-      # 8. Upload artifact
-      - name: Upload .geode
+      # =========================
+      # 8. Artifact
+      # =========================
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: mod-android64
