@@ -16,41 +16,43 @@ jobs:
       - name: Setup Geode CLI
         uses: geode-sdk/cli/.github/actions/setup@main
         with:
-          version: v3.7.4
+          version: v2.5.0
 
-      - name: Create placeholder profile
-        shell: bash
-        run: |
-          set -euo pipefail
-          export CLI_PROFILE="$GITHUB_WORKSPACE/cli-profile"
-          mkdir -p "$CLI_PROFILE/geode/mods"
-          geode profile add --name GithubActions "$CLI_PROFILE/GeometryDash.exe" win
-
-      - name: Install SDK and Android binaries
-        shell: bash
+      - name: Setup Geode config (FIX REAL)
         run: |
           set -euo pipefail
 
-          MOD_JSON_PATH="$(find . -name 'mod.json' -not -path './geode-sdk-clone/*' -print | sort -r | head -n 1)"
-          TARGET_GEODE_VERSION="$(jq -r '.geode' "$MOD_JSON_PATH")"
+          # Crear config básica (esto faltaba)
+          geode config set sdk-path "$GITHUB_WORKSPACE/geode-sdk"
+          geode config set default-platform android64
 
-          echo "Using SDK version: $TARGET_GEODE_VERSION"
-          echo "Using mod.json: $MOD_JSON_PATH"
+      - name: Create dummy profile (necesario sí o sí)
+        run: |
+          set -euo pipefail
 
-          geode sdk install
+          mkdir -p "$GITHUB_WORKSPACE/profile/geode/mods"
+          geode profile add --name CI "$GITHUB_WORKSPACE/profile/GeometryDash.exe"
+
+      - name: Install SDK
+        run: |
+          set -euo pipefail
+
+          TARGET_GEODE_VERSION=$(jq -r '.geode' mod.json)
+
+          echo "Using Geode $TARGET_GEODE_VERSION"
+
+          geode sdk install "$GITHUB_WORKSPACE/geode-sdk"
           geode sdk update "$TARGET_GEODE_VERSION"
           geode sdk install-binaries -p android64
 
-      - name: Build Android64
-        shell: bash
+      - name: Build
         run: |
           set -euo pipefail
-          export ANDROID_NDK_ROOT="${ANDROID_NDK_LATEST_HOME}"
+          export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
           geode build -p android64
 
-      - name: Upload artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: FrameStepper-Android64
+          name: mod
           path: build-android64/*.geode
-          if-no-files-found: error
