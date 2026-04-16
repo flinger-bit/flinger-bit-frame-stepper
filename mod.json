@@ -1,7 +1,7 @@
 {
   "geode": "5.6.1",
   "gd": {
-    "android": "2.207"
+    "android": "2.2081"
   },
   "id": "flinger-bit.frame-stepper",
   "name": "Frame Stepper",
