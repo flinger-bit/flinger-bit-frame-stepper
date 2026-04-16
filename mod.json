@@ -1,1 +1,36 @@
-
+{
+  "geode": "v1.7.2",
+  "gd": {
+    "android": "2.207"
+  },
+  "id": "flinger-bit.frame-stepper",
+  "name": "Frame Stepper",
+  "version": "v1.0.0",
+  "developer": "flinger-bit",
+  "description": "Adds an in-game hold-to-step frame stepper overlay for Android.",
+  "settings": {
+    "enable-frame-stepper": {
+      "type": "bool",
+      "name": "Enable Frame Stepper",
+      "description": "Shows the frame stepper overlay and freezes gameplay until you hold the button.",
+      "default": false
+    },
+    "step-interval-ms": {
+      "type": "int",
+      "name": "Step Interval (ms)",
+      "description": "Milliseconds between each frame step while holding the overlay button.",
+      "default": 16,
+      "min": 1,
+      "max": 1000,
+      "control": {
+        "arrows": true,
+        "big-arrows": false,
+        "slider": true,
+        "input": true,
+        "arrow-step": 1,
+        "big-arrow-step": 10,
+        "slider-step": 1
+      }
+    }
+  }
+}
