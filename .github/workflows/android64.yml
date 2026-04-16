@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +17,8 @@ jobs:
         id: build
         uses: geode-sdk/build-geode-mod@main
         with:
+          sdk: v4.2.0
+          cli: v2.5.0
           target: Android64
           path: .
           build-config: Release
