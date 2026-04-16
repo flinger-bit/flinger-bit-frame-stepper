@@ -8,23 +8,39 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build the mod
-        id: build
-        uses: geode-sdk/build-geode-mod@main
+      - name: Setup Geode CLI
+        uses: geode-sdk/cli/.github/actions/setup@main
         with:
-          sdk: v4.2.0
-          cli: v2.5.0
-          target: Android64
-          path: .
-          build-config: Release
+          version: v3.7.4
+
+      - name: Build Android64
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "${ANDROID_NDK_LATEST_HOME:-}" ]; then
+            export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
+          fi
+
+          MOD_JSON_PATH="$(find . -name mod.json -not -path './geode-sdk-clone/*' -print | sort -r | head -n 1)"
+          TARGET_GEODE_VERSION="$(jq -r '.geode' "$MOD_JSON_PATH")"
+
+          echo "Using SDK version: $TARGET_GEODE_VERSION"
+          echo "Using mod.json: $MOD_JSON_PATH"
+
+          geode sdk install
+          geode sdk update "$TARGET_GEODE_VERSION"
+          geode sdk install-binaries -p android64
+          geode build -p android64
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: FrameStepper-Android64
-          path: ${{ steps.build.outputs.build-output }}
+          path: build-android64/*.geode
+          if-no-files-found: error
