@@ -13,42 +13,64 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Geode CLI
+      - name: Setup CLI
         uses: geode-sdk/cli/.github/actions/setup@main
         with:
           version: v3.7.4
 
-      - name: Install SDK and Android binaries
+      - name: Install Ninja
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip -o ninja.zip
+          7z x ninja.zip -o"$GITHUB_WORKSPACE/ninja"
+          echo "$GITHUB_WORKSPACE/ninja" >> "$GITHUB_PATH"
+
+      - name: Setup Geode SDK
         shell: bash
         run: |
           set -euo pipefail
 
-          MOD_JSON_PATH="$(find . -name mod.json -not -path './geode-sdk-clone/*' -print | sort -r | head -n 1)"
+          geode sdk install "$GITHUB_WORKSPACE/geode-sdk-clone"
+
+          export GEODE_SDK="$GITHUB_WORKSPACE/geode-sdk-clone"
+          echo "GEODE_SDK=$GEODE_SDK" >> "$GITHUB_ENV"
+
+          MOD_JSON_PATH="$(find . -name 'mod.json' -not -path './geode-sdk-clone/*' -print | sort -r | head -n 1)"
           TARGET_GEODE_VERSION="$(jq -r '.geode' "$MOD_JSON_PATH")"
 
           echo "Using SDK version: $TARGET_GEODE_VERSION"
           echo "Using mod.json: $MOD_JSON_PATH"
 
-          geode sdk install
           geode sdk update "$TARGET_GEODE_VERSION"
-          geode sdk install-binaries -p android64
+          geode sdk install-binaries --platform android64 --version "$TARGET_GEODE_VERSION"
 
       - name: Build Android64
         shell: bash
         run: |
           set -euo pipefail
 
-          if [ -z "${ANDROID_NDK_LATEST_HOME:-}" ]; then
-            echo "ANDROID_NDK_LATEST_HOME is not set on this runner"
-            exit 1
-          fi
+          NDK_PATH="$ANDROID_NDK_LATEST_HOME"
 
-          export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
-          geode build -p android64
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DGEODE_CODEGEN_CMAKE_ARGS="-DCMAKE_C_COMPILER=clang;-DCMAKE_CXX_COMPILER=clang++;-G Ninja" \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$NDK_PATH/build/cmake/android.toolchain.cmake" \
+            -DANDROID_STL=c++_shared \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-23 \
+            -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+            -DGEODE_DONT_INSTALL_MODS=ON \
+            -DGEODE_TARGET_PLATFORM=Android64
+
+          cmake --build build --config Release --parallel
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: FrameStepper-Android64
-          path: build-android64/*.geode
+          path: build/*.geode
           if-no-files-found: error
